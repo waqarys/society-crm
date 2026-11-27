@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Society {
+  id          String   @id @default(cuid())
+  name        String
+  address     String?
+  city        String?
+  createdAt   DateTime @default(now())
+  units       Unit[]
+  residents   Resident[]
+}
+
+model Unit {
+  id          String   @id @default(cuid())
+  societyId   String
+  society     Society  @relation(fields: [societyId], references: [id])
+  number      String   // e.g. "A-101"
+  floor       Int?
+  type        String?  // 1BHK, 2BHK, 3BHK
+  areaSqFt    Float?
+  status      String   @default("occupied") // occupied | available_rent | available_sale
+  residents   Resident[]
+  listings    Listing[]
+  bills       Bill[]
+  createdAt   DateTime @default(now())
+}
+
+model Resident {
+  id          String   @id @default(cuid())
+  societyId   String
+  society     Society  @relation(fields: [societyId], references: [id])
+  unitId      String?
+  unit        Unit?    @relation(fields: [unitId], references: [id])
+  name        String
+  phone       String?
+  email       String?
+  carCount    Int      @default(0)
+  bikeCount   Int      @default(0)
+  vehicles    Vehicle[]
+  createdAt   DateTime @default(now())
+}
+
+model Vehicle {
+  id          String   @id @default(cuid())
+  residentId  String
+  resident    Resident @relation(fields: [residentId], references: [id])
+  type        String   // car | bike | scooter
+  registration String?
+  brand       String?
+  model       String?
+  createdAt   DateTime @default(now())
+}
+
+model Bill {
+  id          String   @id @default(cuid())
+  unitId      String
+  unit        Unit     @relation(fields: [unitId], references: [id])
+  amount      Float
+  dueDate     DateTime
+  paid        Boolean  @default(false)
+  paidDate    DateTime?
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model Listing {
+  id          String   @id @default(cuid())
+  unitId      String
+  unit        Unit     @relation(fields: [unitId], references: [id])
+  type        String   // rent | sale
+  price       Float
+  description String?
+  available   Boolean  @default(true)
+  leads       Lead[]
+  createdAt   DateTime @default(now())
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  listingId   String?
+  listing     Listing? @relation(fields: [listingId], references: [id])
+  name        String
+  phone       String?
+  email       String?
+  source      String?  // WhatsApp | Society notice | Referral
+  status      String   @default("new") // new | contacted | interested | closed
+  hubspotId   String?
+  notes       String?
+  commissions Commission[]
+  createdAt   DateTime @default(now())
+}
+
+model Commission {
+  id          String   @id @default(cuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  amount      Float
+  type        String   // rent | sale
+  paid        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
